@@ -233,7 +233,7 @@ bool ffx_hdnode_initSeed(FfxHDNode *node, const uint8_t *seed) {
 
     // Check the private key is good
     FfxEcPubkey pubkey;
-    if (!ffx_ec_getPubkey(&pubkey, &privkey)) { return false; }
+    if (!ffx_ec_computePubkey(&pubkey, &privkey)) { return false; }
 
     node->key.privkey = privkey;
     memcpy(node->chaincode, &I[32], 32);
@@ -267,7 +267,7 @@ bool ffx_hdnode_deriveChild(FfxHDNode *node, uint32_t index) {
         } else {
             // Data = ser_p(point(k_par))
             FfxEcCompPubkey pubkey;
-            if(!ffx_ec_getCompPubkey(&pubkey, &node->key.privkey)) {
+            if(!ffx_ec_computeCompPubkey(&pubkey, &node->key.privkey)) {
                 return false;
             }
             memcpy(I, pubkey.data, 33);
@@ -288,7 +288,7 @@ bool ffx_hdnode_deriveChild(FfxHDNode *node, uint32_t index) {
         // Point(IL) + K_par
 
         FfxEcCompPubkey pubkey;
-        if(!ffx_ec_getCompPubkey(&pubkey, &IL)) { return false; }
+        if(!ffx_ec_computeCompPubkey(&pubkey, &IL)) { return false; }
 
         ffx_ec_addPointsCompPubkey(node->key.pubkey.data, pubkey.data,
           node->key.pubkey.data);
@@ -300,7 +300,7 @@ bool ffx_hdnode_deriveChild(FfxHDNode *node, uint32_t index) {
         ffx_ec_modAddPrivkey(key.data, IL.data, node->key.privkey.data);
 
         FfxEcCompPubkey pubkey;
-        if(!ffx_ec_getCompPubkey(&pubkey, &key)) { return false; }
+        if(!ffx_ec_computeCompPubkey(&pubkey, &key)) { return false; }
 
         node->key.privkey = key;
     }
@@ -397,7 +397,7 @@ bool ffx_hdnode_deriveIndexedAccount(FfxHDNode *_node, uint32_t account) {
 bool ffx_hdnode_neuter(FfxHDNode *node) {
     if (node->neutered) { return true; }
 
-    if (!ffx_ec_getCompPubkey(&node->key.pubkey, &node->key.privkey)) {
+    if (!ffx_ec_computeCompPubkey(&node->key.pubkey, &node->key.privkey)) {
         return false;
     }
 
@@ -406,41 +406,28 @@ bool ffx_hdnode_neuter(FfxHDNode *node) {
     return true;
 }
 
-bool ffx_hdnode_getPrivkey(FfxHDNode *node, uint8_t *privkey) {
+bool ffx_hdnode_getPrivkey(const FfxHDNode *node, FfxEcPrivkey *privkeyOut) {
     if (node->neutered) { return false; }
-    memcpy(privkey, &node->key.privkey.data, 32);
+    memcpy(privkeyOut->data, &node->key.privkey.data, 32);
     return true;
 }
 
-bool ffx_hdnode_getPubkey(FfxHDNode *node, bool compressed, uint8_t *pubkeyOut) {
-    if (compressed) {
-        if (node->neutered) {
-            memcpy(pubkeyOut, node->key.pubkey.data, 33);
-            return true;
-        }
-
-        FfxEcCompPubkey pubkey;
-        if (!ffx_ec_getCompPubkey(&pubkey, &node->key.privkey)) {
-            return false;
-        }
-
-        memcpy(pubkeyOut, pubkey.data, 33);
-        return true;
+bool ffx_hdnode_getPubkey(const FfxHDNode *node, FfxEcPubkey *pubkeyOut) {
+    if (node->neutered) {
+        return ffx_ec_decompressPubkey(pubkeyOut, &node->key.pubkey);
     }
+
+    return ffx_ec_computePubkey(pubkeyOut, &node->key.privkey);
+}
+
+bool ffx_hdnode_getCompPubkey(const FfxHDNode *node,
+  FfxEcCompPubkey *pubkeyOut) {
 
     if (node->neutered) {
-        FfxEcPubkey pubkey;
-        if (!ffx_ec_decompressPubkey(&pubkey, &node->key.pubkey)) {
-            return false;
-        }
-        memcpy(pubkeyOut, pubkey.data, 65);
+        *pubkeyOut = node->key.pubkey;
+        //memcpy(pubkeyOut->data, node->key.pubkey.data, 33);
         return true;
     }
 
-    FfxEcPubkey pubkey;
-    if (!ffx_ec_getPubkey(&pubkey, &node->key.privkey)) { return false; }
-
-    memcpy(pubkeyOut, pubkey.data, 33);
-    return true;
+    return ffx_ec_computeCompPubkey(pubkeyOut, &node->key.privkey);
 }
-

@@ -184,10 +184,8 @@ bool ffx_hdnode_neuter(FfxHDNode *node);
 
 /**
  *  Writes the private key to %%privkeyOut%%, returning false on failure.
- *
- *  The length of %%privkeyOut%% must be [[FFX_PRIVKEY_LENGTH]].
  */
-bool ffx_hdnode_getPrivkey(FfxHDNode *node, uint8_t *privkeyOut);
+bool ffx_hdnode_getPrivkey(const FfxHDNode *node, FfxEcPrivkey *privkeyOut);
 
 /**
  *  Writes the public key to %%pubkeyOut%%, returning false on failure.
@@ -196,8 +194,10 @@ bool ffx_hdnode_getPrivkey(FfxHDNode *node, uint8_t *privkeyOut);
  *    - if %%compressed%%, [[FFX_COMP_PUBKEY_LENGTH]] bytes
  *    - otherwise, [[FFX_PUBKEY_LENGTH]] bytes
  */
-bool ffx_hdnode_getPubkey(FfxHDNode *node, bool compressed,
-  uint8_t *pubkeyOut);
+bool ffx_hdnode_getPubkey(const FfxHDNode *node, FfxEcPubkey *pubkeyOut);
+
+bool ffx_hdnode_getCompPubkey(const FfxHDNode *node,
+  FfxEcCompPubkey *pubkeyOut);
 
 //bool ffx_hdnode_getExtendedKey(FfxHDNode *node, char *extkeyOut);
 

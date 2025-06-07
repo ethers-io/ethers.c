@@ -1,6 +1,23 @@
 #ifndef __FIREFLY_ECC_H__
 #define __FIREFLY_ECC_H__
 
+/**
+ *  The ECC (Elliptic Curve Cryptography) library, which handles elliptic
+ *  cryptographic primitives.
+ *
+ *  In general, these functions all operate on pointers to values so that
+ *  no (potentially sensitive) data is left on the stack after returning.
+ *
+ *  The parameters are all structs with the explicit size of data expected,
+ *  which mitigates buffer overruns caused by misallocating the correct
+ *  space the operation was expecting.
+ *
+ *  As such they intentionally have a more "function" feel than a "method"
+ *  feel, as the output is the first variable with the const inputs
+ *  following.
+ */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
@@ -29,6 +46,10 @@ typedef struct FfxEcSignature {
     uint8_t data[65];
 } FfxEcSignature;
 
+typedef struct FfxEcSharedSecret {
+    uint8_t data[32];
+} FfxEcSharedSecret;
+
 
 #define FFX_INIT_PUBKEY(name,value) \
   FfxEcPubkey name; memcpy(name.data, value, sizeof(name.data));
@@ -45,19 +66,26 @@ typedef struct FfxEcSignature {
 #define FFX_INIT_SIGNATURE(name,value) \
   FfxEcSignature name; memcpy(name.data, value, sizeof(name.data));
 
+#define FFX_INIT_SHARED_SECRET(name,value) \
+  FfxEcSharedSecret name; memcpy(name.data, value, sizeof(name.data));
 
 
+/**
+ *  Optionally initialize the ECC library with %%randomize%% bytes to
+ *  tweak the curve points to mitigate side-channel attacks.
+ */
 void ffx_ec_init(uint8_t *randomize);
 
-bool ffx_ec_getPubkey(FfxEcPubkey *pubkeyOut, const FfxEcPrivkey *privkey);
 
-bool ffx_ec_getCompPubkey(FfxEcCompPubkey *pubkeyOut,
+bool ffx_ec_computePubkey(FfxEcPubkey *pubkeyOut, const FfxEcPrivkey *privkey);
+
+bool ffx_ec_computeCompPubkey(FfxEcCompPubkey *pubkeyOut,
   const FfxEcPrivkey *privkey);
 
-bool ffx_ec_recover(FfxEcPubkey *pubkeyOut, const FfxEcDigest *digest,
-  FfxEcSignature *sig);
+bool ffx_ec_recoverPubkey(FfxEcPubkey *pubkeyOut, const FfxEcDigest *digest,
+  const FfxEcSignature *sig);
 
-bool ffx_ec_sign(FfxEcSignature *sigOut, const FfxEcPrivkey *privkey,
+bool ffx_ec_signDigest(FfxEcSignature *sigOut, const FfxEcPrivkey *privkey,
   const FfxEcDigest *digest);
 
 bool ffx_ec_compressPubkey(FfxEcCompPubkey *pubkeyOut,
@@ -66,6 +94,11 @@ bool ffx_ec_compressPubkey(FfxEcCompPubkey *pubkeyOut,
 bool ffx_ec_decompressPubkey(FfxEcPubkey *pubkeyOut,
   const FfxEcCompPubkey *_pubkey);
 
+bool ffx_ec_computeSharedSecret(FfxEcSharedSecret *secretOut,
+  const FfxEcPrivkey *privkey, const FfxEcPubkey *pubkey);
+
+
+// Low-level Point maths (used for BIP32 operations)
 bool ffx_ec_modAddPrivkey(uint8_t *result32Out, const uint8_t *a32,
   const uint8_t *b32);
 bool ffx_ec_modMulPrivkey(uint8_t *result32Out, const uint8_t *a32,
