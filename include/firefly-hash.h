@@ -15,21 +15,38 @@ extern "C" {
 #define FFX_SHA512_DIGEST_LENGTH             (64)
 
 
-#define _ffx_sha3_max_permutation_size (25)
-#define _ffx_sha3_max_rate_in_qwords (24)
 #define _ffx_sha256_block_length (64)
 #define _ffx_sha512_block_length (128)
 
-
+/*
+#define _ffx_sha3_max_permutation_size (25)
+#define _ffx_sha3_max_rate_in_qwords (24)
 typedef struct FfxKeccak256Context {
-    /* 1600 bits algorithm hashing state */
+    / * 1600 bits algorithm hashing state * /
     uint64_t hash[_ffx_sha3_max_permutation_size];
 
-    /* 1536-bit buffer for leftovers */
+    / * 1536-bit buffer for leftovers * /
     uint64_t message[_ffx_sha3_max_rate_in_qwords];
 
-    /* count of bytes in the message[] buffer */
+    / * count of bytes in the message[] buffer * /
     uint16_t rest;
+} FfxKeccak256Context;
+*/
+
+/* 'Words' here refers to uint64_t */
+#define _ffx_sha3_sponge_words (((1600)/8/*bits to byte*/)/sizeof(uint64_t))
+
+typedef struct FfxKeccak256Context {
+    uint64_t saved;             /* the portion of the input message that we
+                                 * didn't consume yet */
+    union {                     /* Keccak's state */
+        uint64_t s[_ffx_sha3_sponge_words];
+        uint8_t sb[_ffx_sha3_sponge_words * 8];
+    } u;
+    uint32_t byteIndex;         /* 0..7--the next byte after the set one
+                                 * (starts from 0; 0--none are buffered) */
+    uint32_t wordIndex;         /* 0..24--the next word to integrate input
+                                 * (starts from 0) */
 } FfxKeccak256Context;
 
 typedef struct FfxSha256Context {

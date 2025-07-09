@@ -1,229 +1,234 @@
-/* sha3 - an implementation of Secure Hash Algorithm 3 (Keccak).
- * based on the
- * The Keccak SHA-3 submission. Submission to NIST (Round 3), 2011
- * by Guido Bertoni, Joan Daemen, Michaël Peeters and Gilles Van Assche
+/**
+ *  This file is based entirely on the code found here:
+ *    https://github.com/brainhub/SHA3IUF
  *
- * Copyright: 2013 Aleksey Kravchenko <rhash.admin@gmail.com>
+ *  Minor changes to the code include:
+ *  - adapting the API to more closely follow the Firefly style
+ *  - Removed non-256-bit and non-Ethereum variants
+ *  - small style changes (adding braces to if/while)
  *
- * Permission is hereby granted,  free of charge,  to any person  obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction,  including without limitation
- * the rights to  use, copy, modify,  merge, publish, distribute, sublicense,
- * and/or sell copies  of  the Software,  and to permit  persons  to whom the
- * Software is furnished to do so.
- *
- * This program  is  distributed  in  the  hope  that it will be useful,  but
- * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
- * or FITNESS FOR A PARTICULAR PURPOSE.  Use this program  at  your own risk!
+ *  The original code was released under MIT and public domain, so this
+ *  code is also released under MIT (if you need public domain access,
+ *  reach out; just trying to keep licensing simple)
  */
 
-//#if BYTE_ORDER == BIG_ENDIAN
-//#error "Big edian support was removed; re-add"
-//#endif
-
-#include <string.h>
+#include <stdio.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "firefly-hash.h"
 
-// RicMoo: we only care about Keccak256, so we hardcode the blocksize
-#define KECCAK256_BITS  (256)
-#define KECCAK256_BLOCK_SIZE     ((1600 - KECCAK256_BITS * 2) / 8)
+#if __BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__
+    #error "Unsupported endianness"
+#endif
 
-#define I64(x) x##LL
-#define ROTL64(qword, n) ((qword) << (n) ^ ((qword) >> (64 - (n))))
-#define le2me_64(x) (x)
-#define IS_ALIGNED_64(p) (0 == (7 & ((const char*)(p) - (const char*)0)))
-#define me64_to_le_str(to, from, length) memcpy((to), (from), (length))
 
-/* constants */
+// bit-size
+#define BS        (256)
 
-const uint8_t constants[]  = {
-    // round constants; compressed, see get_round_constant for decompression
-    1, 26, 94, 112, 31, 33, 121, 85, 14, 12, 53, 38, 63, 79, 93, 83, 82, 72, 22, 102, 121, 88, 33, 116,
+// capacity-words
+#define CW        (2 * BS / (8 * sizeof(uint64_t)))
 
-    // pi transform
-    1, 6, 9, 22, 14, 20, 2, 12, 13, 19, 23, 15, 4, 24, 21, 8, 16, 5, 3, 18, 17, 11, 7, 10,
+#define KECCAK_ROUNDS 24
 
-    // rho transforms
-    1, 62, 28, 27, 36, 44, 6, 55, 20, 3, 10, 43, 25, 39, 41, 45, 15, 21, 8, 18, 2, 61, 56, 14,
+
+
+#if defined(_MSC_VER)
+#define SHA3_CONST(x) x
+#else
+#define SHA3_CONST(x) x##L
+#endif
+
+#ifndef SHA3_ROTL64
+#define SHA3_ROTL64(x, y) \
+	(((x) << (y)) | ((x) >> ((sizeof(uint64_t)*8) - (y))))
+#endif
+
+static const uint64_t keccakf_rndc[24] = {
+    SHA3_CONST(0x0000000000000001UL), SHA3_CONST(0x0000000000008082UL),
+    SHA3_CONST(0x800000000000808aUL), SHA3_CONST(0x8000000080008000UL),
+    SHA3_CONST(0x000000000000808bUL), SHA3_CONST(0x0000000080000001UL),
+    SHA3_CONST(0x8000000080008081UL), SHA3_CONST(0x8000000000008009UL),
+    SHA3_CONST(0x000000000000008aUL), SHA3_CONST(0x0000000000000088UL),
+    SHA3_CONST(0x0000000080008009UL), SHA3_CONST(0x000000008000000aUL),
+    SHA3_CONST(0x000000008000808bUL), SHA3_CONST(0x800000000000008bUL),
+    SHA3_CONST(0x8000000000008089UL), SHA3_CONST(0x8000000000008003UL),
+    SHA3_CONST(0x8000000000008002UL), SHA3_CONST(0x8000000000000080UL),
+    SHA3_CONST(0x000000000000800aUL), SHA3_CONST(0x800000008000000aUL),
+    SHA3_CONST(0x8000000080008081UL), SHA3_CONST(0x8000000000008080UL),
+    SHA3_CONST(0x0000000080000001UL), SHA3_CONST(0x8000000080008008UL)
 };
 
-#define TYPE_ROUND_INFO      0
-#define TYPE_PI_TRANSFORM   24
-#define TYPE_RHO_TRANSFORM  48
+static const unsigned keccakf_rotc[24] = {
+    1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 2, 14, 27, 41, 56, 8, 25, 43, 62,
+    18, 39, 61, 20, 44
+};
 
-static uint8_t getConstant(uint32_t type, uint32_t index) {
-    return constants[type + index];
-}
+static const unsigned keccakf_piln[24] = {
+    10, 7, 11, 17, 18, 3, 5, 16, 8, 21, 24, 4, 15, 23, 19, 13, 12, 2, 20,
+    14, 22, 9, 6, 1
+};
 
-static uint64_t get_round_constant(uint8_t round) {
-    uint64_t result = 0;
+// generally called after SHA3_KECCAK_SPONGE_WORDS-ctx->capacityWords words 
+// are XORed into the state s
+static void keccakf(uint64_t s[25]) {
+    int i, j, round;
+    uint64_t t, bc[5];
 
-    const uint8_t roundInfo = getConstant(TYPE_ROUND_INFO, round);
-    for (uint_fast8_t i = 0; i <= 6; i++) {
-        uint64_t bit = (roundInfo >> i) & 1;
-        result |= bit << ((1 << i) - 1);
-    }
+    for(round = 0; round < KECCAK_ROUNDS; round++) {
 
-    return result;
-}
-
-
-/* Initializing a sha3 context for given number of output bits */
-void ffx_hash_initKeccak256(FfxKeccak256Context *context) {
-    memset(context, 0, sizeof(FfxKeccak256Context));
-}
-
-/* Keccak theta() transformation */
-static void keccak_theta(uint64_t *A) {
-    uint64_t C[5], D[5];
-
-    for (uint_fast8_t i = 0; i < 5; i++) {
-        C[i] = A[i];
-        for (uint8_t j = 5; j < 25; j += 5) { C[i] ^= A[i + j]; }
-    }
-
-    for (uint_fast8_t i = 0; i < 5; i++) {
-        D[i] = ROTL64(C[(i + 1) % 5], 1) ^ C[(i + 4) % 5];
-    }
-
-    for (uint_fast8_t i = 0; i < 5; i++) {
-        for (uint_fast8_t j = 0; j < 25; j += 5) { A[i + j] ^= D[i]; }
-    }
-}
-
-
-/* Keccak pi() transformation */
-static void keccak_pi(uint64_t *A) {
-    uint64_t A1 = A[1];
-    for (uint8_t i = 1; i < 24; i++) {
-        A[getConstant(TYPE_PI_TRANSFORM, i - 1)] = A[getConstant(TYPE_PI_TRANSFORM, i)];
-    }
-    A[10] = A1;
-    /* note: A[ 0] is left as is */
-}
-
-/* Keccak chi() transformation */
-static void keccak_chi(uint64_t *A) {
-    for (uint_fast8_t i = 0; i < 25; i += 5) {
-        uint64_t A0 = A[0 + i], A1 = A[1 + i];
-        A[0 + i] ^= ~A1 & A[2 + i];
-        A[1 + i] ^= ~A[2 + i] & A[3 + i];
-        A[2 + i] ^= ~A[3 + i] & A[4 + i];
-        A[3 + i] ^= ~A[4 + i] & A0;
-        A[4 + i] ^= ~A0 & A1;
-    }
-}
-
-
-static void sha3_permutation(uint64_t *state) {
-    for (uint_fast8_t round = 0; round < 24; round++) {
-        keccak_theta(state);
-
-        /* apply Keccak rho() transformation */
-        for (uint8_t i = 1; i < 25; i++) {
-            state[i] = ROTL64(state[i], getConstant(TYPE_RHO_TRANSFORM, i - 1));
+        /* Theta */
+        for(i = 0; i < 5; i++) {
+            bc[i] = s[i] ^ s[i + 5] ^ s[i + 10] ^ s[i + 15] ^ s[i + 20];
         }
 
-        keccak_pi(state);
-        keccak_chi(state);
-
-        /* apply iota(state, round) */
-        *state ^= get_round_constant(round);
-    }
-}
-
-/**
- * The core transformation. Process the specified block of data.
- *
- * @param hash the algorithm state
- * @param block the message block to process
- * @param block_size the size of the processed block in bytes
- */
-static void sha3_process_block(uint64_t hash[25], const uint64_t *block) {
-    for (uint8_t i = 0; i < 17; i++) {
-        hash[i] ^= le2me_64(block[i]);
-    }
-
-    /* make a permutation of the hash */
-    sha3_permutation(hash);
-}
-
-//#define SHA3_FINALIZED 0x80000000
-//#define SHA3_FINALIZED 0x8000
-
-/**
- * Calculate message hash.
- * Can be called repeatedly with chunks of the message to be hashed.
- *
- * @param context the algorithm context containing current hashing state
- * @param data message chunk
- * @param dataLength length of the message chunk
- */
-void ffx_hash_updateKeccak256(FfxKeccak256Context *context,
-  const uint8_t *data, size_t dataLength) {
-    uint16_t idx = (uint16_t)context->rest;
-
-    //if (context->rest & SHA3_FINALIZED) return; /* too late for additional input */
-    context->rest = (unsigned)((context->rest + dataLength) % KECCAK256_BLOCK_SIZE);
-
-    /* fill partial block */
-    if (idx) {
-        uint16_t left = KECCAK256_BLOCK_SIZE - idx;
-        memcpy((char*)context->message + idx, data, (dataLength < left ? dataLength : left));
-        if (dataLength < left) return;
-
-        /* process partial block */
-        sha3_process_block(context->hash, context->message);
-        data  += left;
-        dataLength -= left;
-    }
-
-    while (dataLength >= KECCAK256_BLOCK_SIZE) {
-        uint64_t* aligned_message_block;
-        if (IS_ALIGNED_64(data)) {
-            // the most common case is processing of an already aligned message without copying it
-            aligned_message_block = (uint64_t*)(void*)data;
-        } else {
-            memcpy(context->message, data, KECCAK256_BLOCK_SIZE);
-            aligned_message_block = context->message;
+        for(i = 0; i < 5; i++) {
+            t = bc[(i + 4) % 5] ^ SHA3_ROTL64(bc[(i + 1) % 5], 1);
+            for(j = 0; j < 25; j += 5) { s[j + i] ^= t; }
         }
 
-        sha3_process_block(context->hash, aligned_message_block);
-        data  += KECCAK256_BLOCK_SIZE;
-        dataLength -= KECCAK256_BLOCK_SIZE;
+        /* Rho Pi */
+        t = s[1];
+        for(i = 0; i < 24; i++) {
+            j = keccakf_piln[i];
+            bc[0] = s[j];
+            s[j] = SHA3_ROTL64(t, keccakf_rotc[i]);
+            t = bc[0];
+        }
+
+        /* Chi */
+        for(j = 0; j < 25; j += 5) {
+            for(i = 0; i < 5; i++) { bc[i] = s[j + i]; }
+            for(i = 0; i < 5; i++) {
+                s[j + i] ^= (~bc[(i + 1) % 5]) & bc[(i + 2) % 5];
+            }
+        }
+
+        /* Iota */
+        s[0] ^= keccakf_rndc[round];
+    }
+}
+
+///////////////////////////////
+// Public API
+
+void ffx_hash_initKeccak256(FfxKeccak256Context *ctx) {
+    memset(ctx, 0, sizeof(*ctx));
+}
+
+void ffx_hash_updateKeccak256(FfxKeccak256Context *ctx, const uint8_t *data,
+  size_t len) {
+
+    // 0...7 -- how much is needed to have a word
+    unsigned old_tail = (8 - ctx->byteIndex) & 7;
+
+    size_t words;
+    unsigned tail;
+    size_t i;
+
+    const uint8_t *buf = data;
+
+    // have no complete word or haven't started the word yet
+    if(len < old_tail) {
+        // endian-independent code follows:
+        while (len--) {
+            ctx->saved |= (uint64_t) (*(buf++)) << ((ctx->byteIndex++) * 8);
+        }
+        return;
     }
 
-    if (dataLength) {
-        memcpy(context->message, data, dataLength); /* save leftovers */
+    // will have one word to process
+    if(old_tail) {
+        // endian-independent code follows:
+        len -= old_tail;
+        while (old_tail--) {
+            ctx->saved |= (uint64_t) (*(buf++)) << ((ctx->byteIndex++) * 8);
+        }
+
+        // now ready to add saved to the sponge
+        ctx->u.s[ctx->wordIndex] ^= ctx->saved;
+        ctx->byteIndex = 0;
+        ctx->saved = 0;
+        if(++ctx->wordIndex == (_ffx_sha3_sponge_words - CW)) {
+            keccakf(ctx->u.s);
+            ctx->wordIndex = 0;
+        }
+    }
+
+    // now work in full words directly from input
+
+    words = len / sizeof(uint64_t);
+    tail = len - words * sizeof(uint64_t);
+
+    for(i = 0; i < words; i++, buf += sizeof(uint64_t)) {
+        const uint64_t t = (uint64_t) (buf[0]) |
+          ((uint64_t) (buf[1]) << 8 * 1) |
+          ((uint64_t) (buf[2]) << 8 * 2) |
+          ((uint64_t) (buf[3]) << 8 * 3) |
+          ((uint64_t) (buf[4]) << 8 * 4) |
+          ((uint64_t) (buf[5]) << 8 * 5) |
+          ((uint64_t) (buf[6]) << 8 * 6) |
+          ((uint64_t) (buf[7]) << 8 * 7);
+
+        ctx->u.s[ctx->wordIndex] ^= t;
+        if(++ctx->wordIndex == (_ffx_sha3_sponge_words - CW)) {
+            keccakf(ctx->u.s);
+            ctx->wordIndex = 0;
+        }
+    }
+
+    // finally, save the partial word
+    while (tail--) {
+        ctx->saved |= (uint64_t) (*(buf++)) << ((ctx->byteIndex++) * 8);
     }
 }
 
-/**
-* Store calculated hash into the given array.
-*
-* @param context the algorithm context containing current hashing state
-* @param result calculated hash in binary form
-*/
-void ffx_hash_finalKeccak256(FfxKeccak256Context *context, uint8_t* result) {
-    uint16_t digest_length = 100 - KECCAK256_BLOCK_SIZE / 2;
+// This is simply the 'update' with the padding block.
+// The padding block is 0x01 || 0x00* || 0x80. First 0x01 and last 0x80
+// bytes are always present, but they can be the same byte.
+void ffx_hash_finalKeccak256(FfxKeccak256Context *ctx, uint8_t *digestOut) {
 
-//    if (!(context->rest & SHA3_FINALIZED)) {
-        /* clear the rest of the data queue */
-        memset((char*)context->message + context->rest, 0, KECCAK256_BLOCK_SIZE - context->rest);
-        ((char*)context->message)[context->rest] |= 0x01;
-        ((char*)context->message)[KECCAK256_BLOCK_SIZE - 1] |= 0x80;
+    uint64_t t = (uint64_t)(((uint64_t) 1) << (ctx->byteIndex * 8));
 
-        /* process final block */
-        sha3_process_block(context->hash, context->message);
-//        context->rest = SHA3_FINALIZED; /* mark context as finalized */
-//    }
+    // SHA-3 standard: (keccak256 for Ethereum deviates)
+    // Append 2-bit suffix 01, per SHA-3 spec. Instead of 1 for padding we
+    // use 1<<2 below. The 0x02 below corresponds to the suffix 01.
+    // Overall, we feed 0, then 1, and finally 1 to start padding. Without
+    // M || 01, we would simply use 1 to start padding.
+    //  t = (uint64_t)(((uint64_t)(0x02 | (1 << 2))) << ((ctx->byteIndex) * 8));
 
-    if (result) {
-         me64_to_le_str(result, context->hash, digest_length);
+    ctx->u.s[ctx->wordIndex] ^= ctx->saved ^ t;
+
+    ctx->u.s[_ffx_sha3_sponge_words - CW - 1] ^=
+      SHA3_CONST(0x8000000000000000UL);
+    keccakf(ctx->u.s);
+
+    // Return first bytes of the ctx->s. This conversion is not needed for
+    // little-endian platforms e.g. wrap with #if !defined(__BYTE_ORDER__)
+    // || !defined(__ORDER_LITTLE_ENDIAN__) || __BYTE_ORDER__!=__ORDER_LITTLE_ENDIAN__ 
+    //... the conversion below ...
+    // #endif
+    /*
+    {
+        unsigned i;
+        for(i = 0; i < _ffx_sha3_sponge_words; i++) {
+            const unsigned t1 = (uint32_t) ctx->u.s[i];
+            const unsigned t2 = (uint32_t) ((ctx->u.s[i] >> 16) >> 16);
+            ctx->u.sb[i * 8 + 0] = (uint8_t) (t1);
+            ctx->u.sb[i * 8 + 1] = (uint8_t) (t1 >> 8);
+            ctx->u.sb[i * 8 + 2] = (uint8_t) (t1 >> 16);
+            ctx->u.sb[i * 8 + 3] = (uint8_t) (t1 >> 24);
+            ctx->u.sb[i * 8 + 4] = (uint8_t) (t2);
+            ctx->u.sb[i * 8 + 5] = (uint8_t) (t2 >> 8);
+            ctx->u.sb[i * 8 + 6] = (uint8_t) (t2 >> 16);
+            ctx->u.sb[i * 8 + 7] = (uint8_t) (t2 >> 24);
+        }
     }
+    */
+
+    memcpy(digestOut, ctx->u.sb, 32);
 }
+
 
 void ffx_hash_keccak256(uint8_t *digest, const uint8_t *data, size_t length) {
     FfxKeccak256Context ctx;
