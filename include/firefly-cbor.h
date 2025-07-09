@@ -183,7 +183,7 @@ FfxCborBuilder ffx_cbor_build(uint8_t *data, size_t length);
 /**
  *  The current length of the CBOR output.
  */
-size_t ffx_cbor_getBuildLength(FfxCborBuilder *cbor);
+size_t ffx_cbor_getBuildLength(const FfxCborBuilder *cbor);
 
 /**
  *  Append a boolean.

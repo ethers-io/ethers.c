@@ -591,7 +591,7 @@ FfxCborBuilder ffx_cbor_build(uint8_t *data, size_t length) {
     return (FfxCborBuilder){ .data = data, .length = length };
 }
 
-size_t ffx_cbor_getBuildLength(FfxCborBuilder *cbor) {
+size_t ffx_cbor_getBuildLength(const FfxCborBuilder *cbor) {
     return cbor->offset;
 }
 
