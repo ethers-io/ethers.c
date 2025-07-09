@@ -4,6 +4,13 @@
 #include "firefly-hash.h"
 
 
+const char FfxMessagePrefix[27] = {
+    0x19, 0x45, 0x74, 0x68, 0x65, 0x72, 0x65, 0x75, 0x6d, 0x20,
+    0x53, 0x69, 0x67, 0x6e, 0x65, 0x64, 0x20, 0x4d, 0x65, 0x73,
+    0x73, 0x61, 0x67, 0x65, 0x3a, 0x0a, 0x00
+};
+
+
 FfxChecksumAddress ffx_eth_checksumAddress(const FfxAddress *address) {
 
     const uint8_t *bytes = address->data;
@@ -23,6 +30,7 @@ FfxChecksumAddress ffx_eth_checksumAddress(const FfxAddress *address) {
         checksumOut[offset++] = HexNibbles[bytes[i] >> 4];
         checksumOut[offset++] = HexNibbles[bytes[i] & 0xf];
     }
+    checksumOut[offset++] = 0;
 
     // Hash the ASCII representation
     uint8_t digest[FFX_KECCAK256_DIGEST_LENGTH] = { 0 };
