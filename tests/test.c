@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "firefly-address.h"
+#include "firefly-eth.h"
 #include "firefly-bip32.h"
 #include "firefly-cbor.h"
 #include "firefly-ecc.h"
@@ -54,7 +54,7 @@ int runTestAccounts(const char* name, const uint8_t *_privkey,
     memcpy(privkey.data, _privkey, sizeof(privkey.data));
 
     FfxEcPubkey pubkey;
-    if (!ffx_ec_getPubkey(&pubkey, &privkey)) {
+    if (!ffx_ec_computePubkey(&pubkey, &privkey)) {
         dumpBuffer("failed to compute public key:", _privkey, 32);
         return 1;
     }
@@ -109,20 +109,20 @@ int runTestMnemonicsNode(FfxHDNode *node, const uint8_t *chaincode,
         return 1;
     }
 
-    uint8_t key[65];
-
-    ffx_hdnode_getPrivkey(node, key);
-    if (cmpbuf(key, privkey, 32)) {
+    FfxEcPrivkey actPrivkey;
+    ffx_hdnode_getPrivkey(node, &actPrivkey);
+    if (cmpbuf(actPrivkey.data, privkey, 32)) {
         printf("privkey does not match\n");
-        dumpBuffer("Actual:  ", key, 32);
+        dumpBuffer("Actual:  ", actPrivkey.data, 32);
         dumpBuffer("Expected:", privkey, 32);
         return 1;
     }
 
-    ffx_hdnode_getPubkey(node, true, key);
-    if (cmpbuf(key, pubkey, 33)) {
+    FfxEcCompPubkey actPubkey;
+    ffx_hdnode_getCompPubkey(node, &actPubkey);
+    if (cmpbuf(actPubkey.data, pubkey, 33)) {
         printf("pubkey does not match\n");
-        dumpBuffer("Actual:  ", key, 33);
+        dumpBuffer("Actual:  ", actPubkey.data, 33);
         dumpBuffer("Expected:", pubkey, 33);
         return 1;
     }
@@ -340,6 +340,18 @@ int test_hashes() {
     END_TESTS(hashes)
 }
 
+int test_messages() {
+    FfxHash256 hash;
+
+    hash = ffx_eth_hashMessage("");
+    dumpBuffer("Message()", hash.data, sizeof(hash.data));
+
+    hash = ffx_eth_hashMessage("Hello World!");
+    dumpBuffer("Message(Hello World!)", hash.data, sizeof(hash.data));
+
+    return 0;
+}
+
 int test_hmac() {
     START_TESTS(hmac)
 
@@ -550,9 +562,14 @@ int test_transactions() {
 int main() {
     size_t countFail = 0;
 
+    uint8_t random[32] = { 0 };
+    random[4] = 0x42;
+    ffx_ec_init(random);
+
     countFail += test_accounts();
     countFail += test_hashes();
     countFail += test_hmac();
+    countFail += test_messages();
     countFail += test_mnemonics();
     countFail += test_pbkdf();
     countFail += test_transactions();
