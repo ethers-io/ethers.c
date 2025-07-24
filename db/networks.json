@@ -15,9 +15,20 @@
     "chainId": 42161
   },
   {
+    "name": "Arb Sepolia",
+    "fullname": "Arbitrum Sepolia",
+    "token": "sETH",
+    "chainId": 421614
+  },
+  {
     "name": "Base",
     "token": "ETH",
     "chainId": 8453
+  },
+  {
+    "name": "Base Sepolia",
+    "token": "sETH",
+    "chainId": 84532
   },
   {
     "name": "Linea",
@@ -25,9 +36,19 @@
     "chainId": 59144
   },
   {
+    "name": "Linea Sepolia",
+    "token": "sETH",
+    "chainId": 59141
+  },
+  {
     "name": "Optimism",
     "token": "ETH",
     "chainId": 10
+  },
+  {
+    "name": "OP Sepolia",
+    "token": "sETH",
+    "chainId": 11155420
   },
   {
     "name": "Polygon",

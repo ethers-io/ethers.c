@@ -16,16 +16,21 @@ const char _ffx_db_networkStrings[] =
     "Polygon\0POL\0"           // 0x00000019  Chain ID: 137
     "Base\0ETH\0"              // 0x00000025  Chain ID: 8453
     "Arbitrum\0ETH\0"          // 0x0000002e  Chain ID: 42161
-    "Linea\0ETH\0"             // 0x0000003b  Chain ID: 59144
-    "Sepolia\0sETH\0"          // 0x00000045  Chain ID: 11155111
+    "Linea Sepolia\0sETH\0"    // 0x0000003b  Chain ID: 59141
+    "Linea\0ETH\0"             // 0x0000004e  Chain ID: 59144
+    "Base Sepolia\0sETH\0"     // 0x00000058  Chain ID: 84532
+    "Arb Sepolia\0sETH\0"      // 0x0000006a  Chain ID: 421614
+    "Sepolia\0sETH\0"          // 0x0000007b  Chain ID: 11155111
+    "OP Sepolia\0sETH\0"       // 0x00000088  Chain ID: 11155420
 ;
 
-const size_t _ffx_db_networkCount = 14;
+const size_t _ffx_db_networkCount = 22;
 
 const uint32_t _ffx_db_networkIndex[] = {
     0x00000001, 0x00000000, 0x0000000a, 0x0000000c, 0x00000089, 0x00000019,
-    0x00002105, 0x00000025, 0x0000a4b1, 0x0000002e, 0x0000e708, 0x0000003b,
-    0x00aa36a7, 0x00000045,
+    0x00002105, 0x00000025, 0x0000a4b1, 0x0000002e, 0x0000e705, 0x0000003b,
+    0x0000e708, 0x0000004e, 0x00014a34, 0x00000058, 0x00066eee, 0x0000006a,
+    0x00aa36a7, 0x0000007b, 0x00aa37dc, 0x00000088,
 };
 
 #ifdef __cplusplus
