@@ -1,9 +1,19 @@
+import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve as _resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 // Resolves a path relative to this file
 export function resolve(...args) {
   return _resolve(dirname(fileURLToPath(import.meta.url)), '..', ...args);
+}
+
+export function readJSON(filename) {
+    return JSON.parse(readFileSync(resolve(filename)).toString())
+}
+
+export function writeDoth(filename, tag, width, records) {
+    console.log(`Writing: ${ filename }`);
+    writeFileSync(resolve(filename), doth(tag, width, records));
 }
 
 function repeat(c, length) {
@@ -27,31 +37,53 @@ export function doth(tag, width, records) {
       let k = key;
       if (typeof(k) === "number" || typeof(k) === "bigint") {
           k = k.toString(16);
+      } else if (!k.match(/^[0-9a-f]*$/i)) {
+          throw new Error(`bad key: ${ JSON.stringify(k) }`);
       }
       k = padLeft(k, "0", 4 * 2 * width);
       if (map.has(k)) { throw new Error(`duplicate entry: ${ key }`); }
       originalKeys.set(k, key);
       map.set(k, values);
   }
-  console.log(map);
 
   const strings = [ ];
   let stringsIndex = 0;
 
   const indices = [ ];
 
+  const dups = new Map();
+
   for (const key of Array.from(map.keys()).sort()) {
+    const dbgKey = originalKeys.get(key);
+
+    // Add the key
     for (let i = 0; i < key.length; i += 8) {
         indices.push(`0x${ key.substring(i, i + 8) }`);
     }
+
+    // Get the value
+    const values = map.get(key);
+    const value = values.map((v) => (v + "\\0")).join("");
+
+    // We already have an identical entry; use it instead
+    if (dups.has(value)) {
+        const stringsIndex = dups.get(value);
+        indices.push(`0x${ padLeft(stringsIndex.toString(16), "0", 8) }`);
+
+        const padding = repeat(" ", 20 - value.length);
+        const dbgOffset = `0x${ padLeft(stringsIndex.toString(16), "0", 5) }`;
+        strings.push(`  // Dup: "${ value }" ${ padding } ${ dbgOffset } key: ${ dbgKey }`);
+
+        continue;
+    }
+    dups.set(value, stringsIndex);
+
+    // Point the entry to the of the strings
     indices.push(`0x${ padLeft(stringsIndex.toString(16), "0", 8) }`);
 
-    const values = map.get(key);
-
-    let value = values.map((v) => (v + "\\0")).join("");
+    // Add the new string
     const padding = repeat(" ", 28 - value.length);
     const dbgOffset = `0x${ padLeft(stringsIndex.toString(16), "0", 5) }`;
-    const dbgKey = originalKeys.get(key);
     strings.push(`"${ value }" ${ padding }// ${ dbgOffset } key: ${ dbgKey }`);
 
     // We added "\\0" to each value, but the "\\" does not count in offset

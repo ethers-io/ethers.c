@@ -10,10 +10,15 @@ extern "C" {
 #include <stdint.h>
 
 #include "firefly-bigint.h"
+#include "firefly-data.h"
 
 
 const char* ffx_db_getNetworkName(FfxBigInt *chainId);
 const char* ffx_db_getNetworkToken(FfxBigInt *chainId);
+
+const char* ffx_db_getContractName(FfxBigInt *chainId, FfxDataResult *addr);
+
+const char* ffx_db_getSelectorName(FfxDataResult *data);
 
 
 #ifdef __cplusplus

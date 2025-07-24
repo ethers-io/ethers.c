@@ -87,6 +87,7 @@ uint16_t ffx_bigint_bitcount(const FfxBigInt *a);
 void ffx_bigint_dump(FfxBigInt *value);
 
 size_t ffx_bigint_getString(const FfxBigInt *a, char *out);
+void ffx_bigint_getBytes(const FfxBigInt *a, uint8_t *out);
 
 #ifdef __cplusplus
 }

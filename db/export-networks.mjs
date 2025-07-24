@@ -1,8 +1,7 @@
-import { readFileSync, writeFileSync } from "node:fs";
 
-import { doth, resolve } from "./utils.mjs"
+import { readJSON, writeDoth } from "./utils.mjs"
 
-const data = JSON.parse(readFileSync(resolve("db/networks.json")).toString());
+const data = readJSON("db/networks.json");
 
 
 const records = [ ];
@@ -15,6 +14,4 @@ for (const { name, token, chainId } of data) {
     records.push({ key: chainId, values: [ name, token ] });
 }
 
-const filename = resolve("src/db-networks.h");
-console.log(`Writing: ${ filename }`);
-writeFileSync(filename, doth("networks", 1, records));
+writeDoth("src/db-networks.h", "networks", 1, records);

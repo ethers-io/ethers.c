@@ -1,0 +1,88 @@
+[
+  {
+    "name": "@ricmoo",
+    "comment": "testing",
+    "address": [
+      "1:0x8ba1f109551bD432803012645Ac136ddd64DBA72",
+      "11155111:0x8ba1f109551bD432803012645Ac136ddd64DBA72"
+    ]
+  },
+  {
+    "name": "DAI Token",
+    "symbol": "DAI",
+    "decimals": 18,
+    "address": [
+      "mainnet:0x6B175474E89094C44Da98b954EedeAC495271d0F"
+    ],
+     "source": "https://github.com/makerdao/developerguides/blob/master/dai/dai-token/dai-token.md"
+  },
+  {
+    "name": "ENS Registrar",
+    "address": [
+      "1:0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85"
+    ]
+  },
+  {
+    "name": "ENS Registry",
+    "address": [
+      "1:0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e"
+    ]
+  },
+  {
+    "name": "ENS Token",
+    "address": [
+      "1:0xC18360217D8F7Ab5e7c516566761Ea12Ce7F9D72"
+    ]
+  },
+  {
+    "name": "Firefly Faucet",
+    "address": [
+      "11155111:0xC18360217D8F7Ab5e7c516566761Ea12Ce7F9D72"
+    ],
+    "attest": [
+      "ClaimTestETH(address target)"
+    ],
+    "calls": [
+      "claim(address target, uint blockIndex, (uint32 serialNumber, uint32 modelNumber, bytes32[12] pubkey, uint attestR, uint attestYParityAndS) device, (uint8 version, bytes16 nonce bytes32 challenge, bytes32[12] signature) attest)"
+    ]
+  },
+  {
+    "name": "OP Token",
+    "address": [
+      "10:0x4200000000000000000000000000000000000042"
+    ]
+  },
+  {
+    "name": "Testnet USDC",
+    "symbol": "test-USDC",
+    "decimals": 6,
+    "address": [
+      "arb-sepolia:0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d",
+      "base-sepolia:0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+      "sepolia:0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+      "linea-sepolia:0xfece4462d57bd51a6a552365a011b95f0e16d9b7",
+      "op-sepolia:0x5fd84259d66Cd46123540766Be93DFE6D43130D7"
+    ],
+    "source": "https://developers.circle.com/stablecoins/usdc-on-test-networks",
+    "links": [
+      {
+        "name": "faucet",
+        "url": "https://faucet.circle.com"
+      }
+    ]
+  },
+  {
+    "name": "USDC Token",
+    "symbol": "USDC",
+    "decimals": 6,
+    "address": [
+      "arbitrum:0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+      "base:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "linea:0x176211869ca2b568f2a7d4ee941e073a821ee1ff",
+      "mainnet:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      "op:0x0b2c639c533813f4aa9d7837caf62653d097ff85"
+    ],
+    "source": "https://developers.circle.com/stablecoins/usdc-on-main-networks"
+  },
+  { }
+]

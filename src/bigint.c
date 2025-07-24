@@ -504,6 +504,25 @@ size_t ffx_bigint_getString(const FfxBigInt *a, char *out) {
     return FFX_BIGINT_STRING_LENGTH - start - 1;
 }
 
+void ffx_bigint_getBytes(const FfxBigInt *a, uint8_t *out) {
+    uint32_t *value = a->value;
+
+    uint64_t accum = *value++;
+    accum <<= 36;
+    size_t bits = 28;
+
+    for (int i = 0; i < 32; i++) {
+        if (bits < 8) {
+            accum |= (*value++) << (36 - bits);
+            bits += 28;
+        }
+
+        *out = accum >> 56;
+        accum <<= 8;
+        bits -= 8;
+    }
+}
+
 void ffx_bigint_dump(FfxBigInt *value) {
     printf("<BigInt hex=0x");
     bool nonzero = false;
