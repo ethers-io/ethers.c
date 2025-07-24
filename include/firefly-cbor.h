@@ -84,17 +84,17 @@ FfxCborCursor ffx_cbor_walk(const uint8_t *data, size_t length);
  *    - All container lengths are a safe length
  *    - The entire contents is consumed?
  */
-FfxDataError ffx_cbor_validate(FfxCborCursor cursor);
+FfxDataError ffx_cbor_validate(const FfxCborCursor *cursor);
 
 /**
  *  Returns the data type of the %%cursor%%.
  */
-FfxCborType ffx_cbor_getType(FfxCborCursor cursor);
+FfxCborType ffx_cbor_getType(const FfxCborCursor *cursor);
 
 /**
  *  Returns true if the cursor type matches any of %%types%%.
  */
-bool ffx_cbor_checkType(FfxCborCursor cursor, FfxCborType types);
+bool ffx_cbor_checkType(const FfxCborCursor *cursor, FfxCborType types);
 
 /**
  *  Returns the value for scalar types (Null, Boolean, Number).
@@ -106,7 +106,7 @@ bool ffx_cbor_checkType(FfxCborCursor cursor, FfxCborType types);
  *    - Boolean: false = 0, true = 1
  *    - Numbers: the value (negative values are currently unsupported)
  */
-FfxValueResult ffx_cbor_getValue(FfxCborCursor cursor);
+FfxValueResult ffx_cbor_getValue(const FfxCborCursor *cursor);
 
 /**
  *  Returns the data for data types (Data and Strings).
@@ -115,7 +115,7 @@ FfxValueResult ffx_cbor_getValue(FfxCborCursor cursor);
  *
  *  This points to the underlying CBOR data and MUST not be modified.
  */
-FfxDataResult ffx_cbor_getData(FfxCborCursor cursor);
+FfxDataResult ffx_cbor_getData(const FfxCborCursor *cursor);
 
 /**
  *  Returns the number of items for container types (Array and Map) and
@@ -123,14 +123,14 @@ FfxDataResult ffx_cbor_getData(FfxCborCursor cursor);
  *
  *  If .error is non-zero, the .value = 0.
  */
-FfxSizeResult ffx_cbor_getDataLength(FfxCborCursor cursor);
+FfxSizeResult ffx_cbor_getDataLength(const FfxCborCursor *cursor);
 
-FfxSizeResult ffx_cbor_getContainerCount(FfxCborCursor cursor);
+FfxSizeResult ffx_cbor_getContainerCount(const FfxCborCursor *cursor);
 
 /**
  *  Returns true if type matches one of %%types%% and the %%length%% matches.
  */
-bool ffx_cbor_checkLength(FfxCborCursor cursor, FfxCborType types,
+bool ffx_cbor_checkLength(const FfxCborCursor *cursor, FfxCborType types,
   size_t length);
 
 /**
@@ -138,7 +138,7 @@ bool ffx_cbor_checkLength(FfxCborCursor cursor, FfxCborType types,
  *
  *  If .error == FfxDataErrorNotFound, the %%key%% does not exist in the Map.
  */
-FfxCborCursor ffx_cbor_followKey(FfxCborCursor cursor, const char *key);
+FfxCborCursor ffx_cbor_followKey(const FfxCborCursor *cursor, const char *key);
 
 /**
  *  Returns a cursor pointing to the %%index%% item.
@@ -146,7 +146,7 @@ FfxCborCursor ffx_cbor_followKey(FfxCborCursor cursor, const char *key);
  *  If .error = FfxDataErrorNotFound, the %%index%% is out of range of
  *  the Array.
  */
-FfxCborCursor ffx_cbor_followIndex(FfxCborCursor cursor, size_t index);
+FfxCborCursor ffx_cbor_followIndex(const FfxCborCursor *cursor, size_t index);
 
 /**
  *  Iterates over a container type (Array or Map).
@@ -159,7 +159,7 @@ FfxCborCursor ffx_cbor_followIndex(FfxCborCursor cursor, size_t index);
  *    }
  *
  */
-FfxCborIterator ffx_cbor_iterate(FfxCborCursor container);
+FfxCborIterator ffx_cbor_iterate(const FfxCborCursor *container);
 
 /**
  *  Advances the cursor to the next item in the container.
@@ -172,7 +172,7 @@ bool ffx_cbor_nextChild(FfxCborIterator *iterator);
 /**
  *  Dumps the structured CBOR data to the console via printf.
  */
-void ffx_cbor_dump(FfxCborCursor cursor);
+void ffx_cbor_dump(const FfxCborCursor *cursor);
 
 
 /**
@@ -261,13 +261,13 @@ void ffx_cbor_adjustCount(FfxCborBuilder *cbor, FfxCborTag tag, size_t count);
 /**
  *  Append raw CBOR-encoded %%data%% to an entry in %%builder%%.
  */
-bool ffx_cbor_appendCborRaw(FfxCborBuilder *cbor, uint8_t *data,
+bool ffx_cbor_appendCborRaw(FfxCborBuilder *cbor, const uint8_t *data,
   size_t length);
 
 /**
  *  Append an entire CborBuilder %%src%% to an entry in %%dst%%.
  */
-bool ffx_cbor_appendCborBuilder(FfxCborBuilder *dst, FfxCborBuilder *src);
+bool ffx_cbor_appendCborBuilder(FfxCborBuilder *dst, const FfxCborBuilder *src);
 
 
 

@@ -18,18 +18,18 @@ typedef enum Format {
 } Format;
 
 
-static uint8_t getType(FfxDataResult *tx) {
+static uint8_t getType(const FfxDataResult *tx) {
     if (tx->error || tx->length == 0 || tx->bytes[0] != 2) { return 0; }
     return tx->bytes[0];
 }
 
-uint8_t ffx_tx_getType(FfxDataResult tx) {
-    return getType(&tx);
+uint8_t ffx_tx_getType(const FfxDataResult *tx) {
+    return getType(tx);
 }
 
 
-static FfxDataError append(FfxRlpBuilder *rlp, Format format, FfxCborCursor tx,
-  const char* key) {
+static FfxDataError append(FfxRlpBuilder *rlp, Format format,
+  const FfxCborCursor *tx, const char* key) {
 
     FfxCborCursor value = ffx_cbor_followKey(tx, key);
     if (value.error == FfxDataErrorNotFound) {
@@ -39,11 +39,11 @@ static FfxDataError append(FfxRlpBuilder *rlp, Format format, FfxCborCursor tx,
         return value.error;
     }
 
-    if (!ffx_cbor_checkType(value, FfxCborTypeData)) {
+    if (!ffx_cbor_checkType(&value, FfxCborTypeData)) {
         return FfxDataErrorBadData;
     }
 
-    FfxDataResult data = ffx_cbor_getData(value);
+    FfxDataResult data = ffx_cbor_getData(&value);
     if (data.error) { return FfxDataErrorBadData; }
 
     const uint8_t *bytes = data.bytes;
@@ -70,7 +70,7 @@ static FfxDataError append(FfxRlpBuilder *rlp, Format format, FfxCborCursor tx,
 }
 
 
-static FfxDataError appendAccessList(FfxRlpBuilder *rlp, FfxCborCursor tx) {
+static FfxDataError appendAccessList(FfxRlpBuilder *rlp, const FfxCborCursor *tx) {
     // Copy the access list (if any) to the RLP
 
     // If the accessList key is absent, use the default, an empty access list
@@ -82,7 +82,7 @@ static FfxDataError appendAccessList(FfxRlpBuilder *rlp, FfxCborCursor tx) {
         return accessList.error;
     }
 
-    if (!ffx_cbor_checkType(accessList, FfxCborTypeArray)) {
+    if (!ffx_cbor_checkType(&accessList, FfxCborTypeArray)) {
         return FfxDataErrorBadData;
     }
 
@@ -90,11 +90,11 @@ static FfxDataError appendAccessList(FfxRlpBuilder *rlp, FfxCborCursor tx) {
     FfxRlpBuilderTag iTag = ffx_rlp_appendMutableArray(rlp);
     if (rlp->error) { return rlp->error; }
 
-    FfxCborIterator iter = ffx_cbor_iterate(accessList);
+    FfxCborIterator iter = ffx_cbor_iterate(&accessList);
     while (ffx_cbor_nextChild(&iter)) {
 
         // Check: [ address, slots ]
-        if (!ffx_cbor_checkLength(iter.child, FfxCborTypeArray, 2)) {
+        if (!ffx_cbor_checkLength(&iter.child, FfxCborTypeArray, 2)) {
             return FfxDataErrorBadData;
         }
 
@@ -102,11 +102,11 @@ static FfxDataError appendAccessList(FfxRlpBuilder *rlp, FfxCborCursor tx) {
         if (rlp->error) { return rlp->error; }
 
         // Check: X = [ data: 20 bytes ]
-        FfxCborCursor address = ffx_cbor_followIndex(iter.child, 0);
+        FfxCborCursor address = ffx_cbor_followIndex(&iter.child, 0);
         if (address.error) { return address.error; }
 
         {
-            FfxDataResult data = ffx_cbor_getData(address);
+            FfxDataResult data = ffx_cbor_getData(&address);
             if (data.error) { return data.error; }
             if (data.length != 20) { return FfxDataErrorBadData; }
 
@@ -115,9 +115,9 @@ static FfxDataError appendAccessList(FfxRlpBuilder *rlp, FfxCborCursor tx) {
         }
 
         // Check: Y = [ ]
-        FfxCborCursor slots = ffx_cbor_followIndex(iter.child, 1);
+        FfxCborCursor slots = ffx_cbor_followIndex(&iter.child, 1);
         if (slots.error) { return slots.error; }
-        if (!ffx_cbor_checkType(slots, FfxCborTypeArray)) {
+        if (!ffx_cbor_checkType(&slots, FfxCborTypeArray)) {
             return FfxDataErrorBadData;
         }
 
@@ -125,9 +125,9 @@ static FfxDataError appendAccessList(FfxRlpBuilder *rlp, FfxCborCursor tx) {
         FfxRlpBuilderTag siTag = ffx_rlp_appendMutableArray(rlp);
         if (rlp->error) { return rlp->error; }
 
-        FfxCborIterator iterSlots = ffx_cbor_iterate(slots);
+        FfxCborIterator iterSlots = ffx_cbor_iterate(&slots);
         while (ffx_cbor_nextChild(&iterSlots)) {
-            FfxDataResult data = ffx_cbor_getData(iterSlots.child);
+            FfxDataResult data = ffx_cbor_getData(&iterSlots.child);
             if (data.error) { return data.error; };
             if (data.length != 32) { return FfxDataErrorBadData; }
 
@@ -149,7 +149,7 @@ static FfxDataError appendAccessList(FfxRlpBuilder *rlp, FfxCborCursor tx) {
 
 
 
-FfxDataError serialize1559(FfxCborCursor tx, FfxRlpBuilder *rlp) {
+static FfxDataError serialize1559(const FfxCborCursor *tx, FfxRlpBuilder *rlp) {
 
     // The Unsigned EIP-1559 Tx has 9 fields
     if (!ffx_rlp_appendArray(rlp, 9)) { return rlp->error; }
@@ -191,16 +191,16 @@ FfxDataError serialize1559(FfxCborCursor tx, FfxRlpBuilder *rlp) {
     return FfxDataErrorNone;
 }
 
-static FfxValueResult readNumber(FfxCborCursor tx, const char* key) {
+static FfxValueResult readNumber(const FfxCborCursor *tx, const char* key) {
 
     FfxCborCursor follow = ffx_cbor_followKey(tx, key);
     if (follow.error) {
         return (FfxValueResult){ .error = follow.error };
-    } else if (!ffx_cbor_checkType(follow, FfxCborTypeData)) {
+    } else if (!ffx_cbor_checkType(&follow, FfxCborTypeData)) {
         return (FfxValueResult){ .error = FfxDataErrorBadData };
     }
 
-    FfxDataResult data = ffx_cbor_getData(follow);
+    FfxDataResult data = ffx_cbor_getData(&follow);
     if (data.error) { return (FfxValueResult){ .error = data.error }; }
 
     if (data.length > 8) {
@@ -216,7 +216,7 @@ static FfxValueResult readNumber(FfxCborCursor tx, const char* key) {
     return (FfxValueResult){ .value = value };
 }
 
-FfxDataResult ffx_tx_serializeUnsigned(FfxCborCursor tx, uint8_t *data,
+FfxDataResult ffx_tx_serializeUnsigned(const FfxCborCursor *tx, uint8_t *data,
   size_t length) {
 
     uint8_t type = 0;
@@ -255,25 +255,25 @@ FfxDataResult ffx_tx_serializeUnsigned(FfxCborCursor tx, uint8_t *data,
     return result;
 }
 
-static FfxRlpCursor getRlp(FfxDataResult tx) {
-    if (getType(&tx) == 2) {
-        if (tx.length == 0) {
+static FfxRlpCursor getRlp(const FfxDataResult *tx) {
+    if (getType(tx) == 2) {
+        if (tx->length == 0) {
             return (FfxRlpCursor){ .error = FfxDataErrorBadData };
         }
-        return ffx_rlp_walk(&tx.bytes[1], tx.length - 1);
+        return ffx_rlp_walk(&tx->bytes[1], tx->length - 1);
     }
     return (FfxRlpCursor){ .error = FfxDataErrorUnsupportedFeature };
 }
 
-static FfxDataResult readFormat(FfxDataResult tx, Format format,
+static FfxDataResult readFormat(const FfxDataResult *tx, Format format,
   size_t index) {
 
-    if (tx.error) { return (FfxDataResult){ .error = tx.error }; }
+    if (tx->error) { return (FfxDataResult){ .error = tx->error }; }
 
     FfxRlpCursor rlp = getRlp(tx);
     if (rlp.error) { return (FfxDataResult){ .error = rlp.error }; }
 
-    if (getType(&tx) == 2) {
+    if (getType(tx) == 2) {
         // Make sure it is a valid EIP-1559 tx
         FfxSizeResult count = ffx_rlp_getArrayCount(rlp);
         if (count.error) { return (FfxDataResult){ .error = count.error }; }
@@ -308,32 +308,32 @@ static FfxDataResult readFormat(FfxDataResult tx, Format format,
     return (FfxDataResult){ .error = FfxDataErrorBadData };
 }
 
-FfxDataResult ffx_tx_getAddress(FfxDataResult tx) {
+FfxDataResult ffx_tx_getAddress(const FfxDataResult *tx) {
     // @TODO: in the future, when adding support for other types, this
     //        result should be checked for nullable vs non-nullable
     return readFormat(tx, FormatNullableAddress, 5);
 }
 
-FfxDataResult ffx_tx_getChainId(FfxDataResult tx) {
+FfxDataResult ffx_tx_getChainId(const FfxDataResult *tx) {
     return readFormat(tx, FormatNumber, 0);
 }
 
-FfxDataResult ffx_tx_getData(FfxDataResult tx) {
+FfxDataResult ffx_tx_getData(const FfxDataResult *tx) {
     return readFormat(tx, FormatData, 7);
 }
 
-FfxDataResult ffx_tx_getValue(FfxDataResult tx) {
+FfxDataResult ffx_tx_getValue(const FfxDataResult *tx) {
     return readFormat(tx, FormatNumber, 6);
 }
 
 
-bool ffx_tx_isSigned(FfxDataResult tx) {
-    if (tx.error) { return false; }
+bool ffx_tx_isSigned(const FfxDataResult *tx) {
+    if (tx->error) { return false; }
 
     FfxRlpCursor rlp = getRlp(tx);
     if (rlp.error) { return false; }
 
-    switch (getType(&tx)) {
+    switch (getType(tx)) {
         case 2: {
             FfxSizeResult count = ffx_rlp_getArrayCount(rlp);
             if (count.error) { return false; }
@@ -346,18 +346,18 @@ bool ffx_tx_isSigned(FfxDataResult tx) {
     return false;
 }
 
-void ffx_tx_dump(FfxDataResult tx) {
-    printf("Transaction: type=%d error=%d\n", getType(&tx), tx.error);
+void ffx_tx_dump(const FfxDataResult *tx) {
+    printf("Transaction: type=%d error=%d\n", getType(tx), tx->error);
 
-    if (tx.error) {
+    if (tx->error) {
         printf("\n");
         return;
     }
 
     printf("RLP Data: 0x");
-    for (int i = 0; i < tx.length; i++) { printf("%02x", tx.bytes[i]); }
-    printf(" (length=%d)\n", (int)tx.length);
+    for (int i = 0; i < tx->length; i++) { printf("%02x", tx->bytes[i]); }
+    printf(" (length=%d)\n", (int)tx->length);
 
     printf("RLP Structured: ");
-    ffx_rlp_dump(ffx_rlp_walk(&tx.bytes[1], tx.length - 1));
+    ffx_rlp_dump(ffx_rlp_walk(&tx->bytes[1], tx->length - 1));
 }
