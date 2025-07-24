@@ -5,29 +5,29 @@
 #include "db-networks.h"
 
 const char* ffx_db_getNetworkNameU32(uint32_t chainId) {
-    size_t count = _ffx_db_networkCount;
+    size_t count = _ffx_db_networksCount;
     for (int i = 0; i < count; i++) {
-        uint32_t id = _ffx_db_networkIndex[2 * i];
+        uint32_t id = _ffx_db_networksIndex[2 * i];
         if (id == chainId) {
-            return &_ffx_db_networkStrings[_ffx_db_networkIndex[2 * i + 1]];
+            return &_ffx_db_networksStrings[_ffx_db_networksIndex[2 * i + 1]];
         }
     }
     return NULL;
 }
 
 const char* ffx_db_getNetworkName(FfxBigInt *chainId) {
-    size_t count = _ffx_db_networkCount;
+    size_t count = _ffx_db_networksCount;
     for (int i = 0; i < count; i++) {
-        uint32_t id = _ffx_db_networkIndex[2 * i];
+        uint32_t id = _ffx_db_networksIndex[2 * i];
         if (ffx_bigint_cmpU32(chainId, id) == 0) {
-            return &_ffx_db_networkStrings[_ffx_db_networkIndex[2 * i + 1]];
+            return &_ffx_db_networksStrings[_ffx_db_networksIndex[2 * i + 1]];
         }
     }
     return NULL;
 }
 
 const char* ffx_db_getNetworkToken(FfxBigInt *chainId) {
-    const char *result = ffx_db_getNetworkName(chainId);
+    const char *result = ffx_db_getNetworksName(chainId);
     if (result == NULL) { return NULL; }
     return &result[strlen(result) + 1];
 }
