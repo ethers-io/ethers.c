@@ -1,7 +1,7 @@
 
 import { readJSON, writeDoth } from "./utils.mjs"
 
-const data = readJSON("db/networks.json");
+const data = readJSON("db/db-networks.json");
 
 
 const records = [ ];

@@ -2,7 +2,7 @@ import { concat, keccak256, toBeArray } from "./ethers.js";
 
 import { readJSON, writeDoth } from "./utils.mjs";
 
-const networks = readJSON("db/networks.json").reduce((a, v) => {
+const networks = readJSON("db/db-networks.json").reduce((a, v) => {
    if (v.name) { a.set(v.name.toLowerCase(), BigInt(v.chainId)); }
    return a;
 }, new Map());
@@ -21,7 +21,7 @@ function getNetwork(value) {
 }
 
 
-const data = readJSON("db/contracts.json");
+const data = readJSON("db/db-contracts.json");
 
 const records = [ ];
 for (const { name, address } of data) {
