@@ -1,6 +1,6 @@
-import { concat, keccak256, toBeArray } from "./ethers.js";
+import { concat, keccak256, toBeArray } from "./lib/ethers.js";
 
-import { readJSON, writeDoth } from "./utils.mjs";
+import { readJSON, writeDoth } from "./lib/utils.mjs";
 
 const networks = readJSON("db/db-networks.json").reduce((a, v) => {
    if (v.name) { a.set(v.name.toLowerCase(), BigInt(v.chainId)); }

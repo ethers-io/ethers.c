@@ -16,8 +16,8 @@
     ],
     "calls": [
       "ERC-20"
-    ]
-     "source": "https://github.com/makerdao/developerguides/blob/master/dai/dai-token/dai-token.md"
+    ],
+    "source": "https://github.com/makerdao/developerguides/blob/master/dai/dai-token/dai-token.md"
   },
   {
     "name": "ENS Registrar",

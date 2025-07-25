@@ -4,16 +4,24 @@ import { fileURLToPath } from 'node:url';
 
 // Resolves a path relative to this file
 export function resolve(...args) {
-  return _resolve(dirname(fileURLToPath(import.meta.url)), '..', ...args);
+  return _resolve(dirname(fileURLToPath(import.meta.url)), '../..', ...args);
+}
+
+export function readFile(filename) {
+    return readFileSync(resolve(filename)).toString()
 }
 
 export function readJSON(filename) {
-    return JSON.parse(readFileSync(resolve(filename)).toString())
+    return JSON.parse(readFile(filename));
+}
+
+export function writeFile(filename, data) {
+    console.log(`Writing: ${ filename }`);
+    return writeFileSync(resolve(filename), data);
 }
 
 export function writeDoth(filename, tag, width, records) {
-    console.log(`Writing: ${ filename }`);
-    writeFileSync(resolve(filename), doth(tag, width, records));
+    writeFile(filename, doth(tag, width, records));
 }
 
 function repeat(c, length) {

@@ -20,6 +20,26 @@ are provided to simplify developers updating the database and generating
 the corresponding header files used by the API.
 
 
+BIP39 Wordlist
+--------------
+
+The BIP-39 English wordlist is the 2048 words used by most blockchains to
+represent mnemonic phrases as a backup.
+
+```
+Imports:       db/db-lang-en.txt
+Export Script: db/export-bip39-en.mjs
+Generates:     src/bip39-en.h
+
+API:
+  // Returns the index of the word (or -1 if not present)
+  int ffx_bip39_index(const char* const word);
+
+  // Returns the word at index (or NULL if outside the range [0, 2047])
+  const char* ffx_bip39_word(int index);```
+```
+
+
 Contracts Database
 ------------------
 
@@ -27,7 +47,7 @@ The Contracts database stores hashed (address, network) tuples mapped
 to the contract name.
 
 ```
-Imports:       db/contracts.json
+Imports:       db/db-contracts.json
 Export Script: db/export-contracts.mjs
 Generates:     src/db-contracts.h
 
@@ -45,7 +65,7 @@ The Network database stores network Chain ID mapped to (Network Name,
 Network Token) tuples.
 
 ```
-Imports:       db/networks.json
+Imports:       db/db-networks.json
 Export Script: db/export-networks.mjs
 Generates:     src/db-networks.h
 

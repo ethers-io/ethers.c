@@ -1,5 +1,5 @@
 
-import { readJSON, writeDoth } from "./utils.mjs"
+import { readJSON, writeDoth } from "./lib/utils.mjs"
 
 const data = readJSON("db/db-networks.json");
 

@@ -1,8 +1,9 @@
-import { readFileSync, writeFileSync } from "fs";
-import { resolve } from "./utils.mjs";
+import { readFile, writeFile } from "./lib/utils.mjs";
 
-const words = readFileSync(resolve("db/lang-en.txt")).toString().trim().split("\n");
+
+const words = readFile("db/db-lang-en.txt").trim().split("\n");
 if (words.length !== 2048) { throw new Error("bad list!"); }
+
 
 const lines = [ ];
 lines.push("#ifndef __BIP39_EN_H__");
@@ -26,4 +27,5 @@ lines.push("#endif /* __cplusplus */");
 lines.push("");
 lines.push("#endif /* __BIP39_EN_H__ */");
 
-writeFileSync(resolve("src/bip39-en.h"), lines.join("\n"));
+
+writeFile("src/bip39-en.h", lines.join("\n"));
