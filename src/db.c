@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <string.h>
 
 #include "firefly-db.h"
@@ -7,8 +8,7 @@
 #include "db-networks.h"
 
 const char* ffx_db_getNetworkNameU32(uint32_t chainId) {
-    size_t count = _ffx_db_networksCount;
-    for (int i = 0; i < count; i++) {
+    for (int i = 0; i < _ffx_db_networksCount; i++) {
         uint32_t id = _ffx_db_networksIndex[2 * i];
         if (id == chainId) {
             return &_ffx_db_networksStrings[_ffx_db_networksIndex[2 * i + 1]];
@@ -18,8 +18,7 @@ const char* ffx_db_getNetworkNameU32(uint32_t chainId) {
 }
 
 const char* ffx_db_getNetworkName(FfxBigInt *chainId) {
-    size_t count = _ffx_db_networksCount;
-    for (int i = 0; i < count; i++) {
+    for (int i = 0; i < _ffx_db_networksCount; i++) {
         uint32_t id = _ffx_db_networksIndex[2 * i];
         if (ffx_bigint_cmpU32(chainId, id) == 0) {
             return &_ffx_db_networksStrings[_ffx_db_networksIndex[2 * i + 1]];
@@ -43,7 +42,17 @@ const char* ffx_db_getNetwork(FfxBigInt *chainId) {
 }
 */
 
-int cmpbuf32(uint32_t *a, uint32_t *b, size_t length) {
+/*
+static void dumpbuf(const char* header, uint8_t *data, size_t length) {
+    printf("%s", header);
+    for (int i = 0; i < length; i++) {
+        printf("%02x", data[i]);
+    }
+    printf("\n");
+}
+*/
+
+int cmpbuf32(const uint32_t *a, const uint32_t *b, size_t length) {
     for (int i = 0; i < length; i++) {
         int d = ((int)(b[i])) - ((int)(a[i]));
         if (d) { return d; }
@@ -51,13 +60,15 @@ int cmpbuf32(uint32_t *a, uint32_t *b, size_t length) {
     return 0;
 }
 
+
 const char* ffx_db_getContractName(FfxBigInt *chainId, FfxDataResult *addr) {
     if (addr->length != 20) { return NULL; }
 
     // Compute the lookup key keccak256(address ++ u256(chainId))[0: 12]
-    uint8_t data[52];
+    uint8_t data[52] = { 0 };
     memcpy(&data[0], addr->bytes, 20);
     ffx_bigint_getBytes(chainId, &data[20]);
+
     ffx_hash_keccak256(data, data, sizeof(data));
 
     // Search for a matching entry

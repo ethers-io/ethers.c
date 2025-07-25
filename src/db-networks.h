@@ -26,7 +26,7 @@ const char _ffx_db_networksStrings[] =
 ;
 
 // Number of entries in indices
-const size_t _ffx_db_networksCount = 22;
+const size_t _ffx_db_networksCount = 11;
 
 // Width (in words) of each key
 const size_t _ffx_db_networksWidth = 1;

@@ -44,11 +44,18 @@ export function doth(tag, width, records) {
   for (const { key, values } of records) {
       let k = key;
       if (typeof(k) === "number" || typeof(k) === "bigint") {
-          k = k.toString(16);
-      } else if (!k.match(/^[0-9a-f]*$/i)) {
+          k = padLeft(k.toString(16), "0", 4 * 2 * width);
+      } else if (k.match(/^[0-9a-f]*$/i)) {
+          k = padLeft(k, "0", 4 * 2 * width);
+          const words = [ ];
+          for (let i = 0; i < k.length; i += 8) {
+              const word = (b) => k.substring(i + (b * 2), i + (b * 2) + 2);
+              words.push(word(3) + word(2) + word(1) + word(0));
+          }
+          k = words.join("");
+      } else {
           throw new Error(`bad key: ${ JSON.stringify(k) }`);
       }
-      k = padLeft(k, "0", 4 * 2 * width);
       if (map.has(k)) { throw new Error(`duplicate entry: ${ key }`); }
       originalKeys.set(k, key);
       map.set(k, values);
@@ -121,7 +128,7 @@ export function doth(tag, width, records) {
   lines.push(`;`)
   lines.push(``)
   lines.push(`// Number of entries in indices`)
-  lines.push(`const size_t _ffx_db_${ tag }Count = ${ indices.length };`)
+  lines.push(`const size_t _ffx_db_${ tag }Count = ${ records.length };`)
   lines.push(``)
   lines.push(`// Width (in words) of each key`)
   lines.push(`const size_t _ffx_db_${ tag }Width = ${ width };`)

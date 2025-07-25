@@ -12,46 +12,46 @@ extern "C" {
 
 // Strings for each record
 const char _ffx_db_contractsStrings[] =
-    "Testnet USDC\0"               // 0x00000 key: 20347798b9604e1329aca150
-      // Dup: "Testnet USDC\0"        0x00000 key: 560e7d9fd2c02793b9e80843
-    "USDC Token\0"                 // 0x0000d key: 63a60b1c03d7c2688cbc7adb
-    "DAI Token\0"                  // 0x00018 key: 6c5960195073111bbebc2173
-    "ENS Registrar\0"              // 0x00022 key: 6e3c81233185953860f543eb
-      // Dup: "USDC Token\0"          0x0000d key: 71caeb431420c82aaee1c031
-      // Dup: "Testnet USDC\0"        0x00000 key: 7324a1b1776b4607046d6e89
-    "@ricmoo\0"                    // 0x00030 key: 7fbbe37c2c3a93b8d3364177
-    "ENS Registry\0"               // 0x00038 key: 883b5ee2810655d4e8425b84
-      // Dup: "USDC Token\0"          0x0000d key: 919d1e353d21172b34877a22
-    "OP Token\0"                   // 0x00045 key: 94657521289b8402f441eb22
-    "ENS Token\0"                  // 0x0004e key: aa328fb24ab020508546cf0e
-      // Dup: "Testnet USDC\0"        0x00000 key: b1a7f7b7cc4aabe211c7be56
-      // Dup: "@ricmoo\0"             0x00030 key: b5dcd720ed7238e4bf152f7b
-      // Dup: "USDC Token\0"          0x0000d key: d0cffc40c1070187b6e6c296
-    "Firefly Faucet\0"             // 0x00058 key: f44e9e31a120aaf4dd1f037d
-      // Dup: "Testnet USDC\0"        0x00000 key: f482db1c736d35de091d442c
-      // Dup: "USDC Token\0"          0x0000d key: fb552a13f8a3ef84dbe4d883
+    "@ricmoo\0"                    // 0x00000 key: d944321005d50e40dde62aec
+    "DAI Token\0"                  // 0x00008 key: 7be3042b4dddc67b02103cb8
+    "Testnet USDC\0"               // 0x00012 key: f0f8c938189da0d5d67e9688
+    "USDC Token\0"                 // 0x0001f key: 96f24f45430cb7919ef88750
+      // Dup: "USDC Token\0"          0x0001f key: 3f3c9645db8a50e8ae910ebd
+      // Dup: "USDC Token\0"          0x0001f key: df858e466058203597bde3b3
+      // Dup: "Testnet USDC\0"        0x00012 key: fb77205a640faddfdde33258
+      // Dup: "Testnet USDC\0"        0x00012 key: 419f6d618f9e99e465e72de9
+    "ENS Registry\0"               // 0x0002a key: e89a6f6509af1263c5e8af89
+      // Dup: "Testnet USDC\0"        0x00012 key: d6c5607583ea5ecdc52f6c5d
+      // Dup: "@ricmoo\0"             0x00000 key: e578127a55769a52b36886fd
+    "OP Token\0"                   // 0x00037 key: ec57cdb60e9620a9bd5a58d6
+      // Dup: "USDC Token\0"          0x0001f key: 96a5c2c36be417a7c59d8be7
+    "Firefly Faucet\0"             // 0x00040 key: b9f823cc063f4c56e6cc032c
+    "ENS Registrar\0"              // 0x0004f key: a74937cd51c1456557c5dce9
+      // Dup: "USDC Token\0"          0x0001f key: b345e7e5167fce13eb894d1a
+    "ENS Token\0"                  // 0x0005d key: b370abed77b46ca7f1d905e7
+      // Dup: "Testnet USDC\0"        0x00012 key: 1528bff307c7dbf10c3a3ccf
 ;
 
 // Number of entries in indices
-const size_t _ffx_db_contractsCount = 72;
+const size_t _ffx_db_contractsCount = 18;
 
 // Width (in words) of each key
 const size_t _ffx_db_contractsWidth = 3;
 
 // Each key, followed by its index into Strings
 const uint32_t _ffx_db_contractsIndex[] = {
-    0x20347798, 0xb9604e13, 0x29aca150, 0x00000000, 0x560e7d9f, 0xd2c02793,
-    0xb9e80843, 0x00000000, 0x63a60b1c, 0x03d7c268, 0x8cbc7adb, 0x0000000d,
-    0x6c596019, 0x5073111b, 0xbebc2173, 0x00000018, 0x6e3c8123, 0x31859538,
-    0x60f543eb, 0x00000022, 0x71caeb43, 0x1420c82a, 0xaee1c031, 0x0000000d,
-    0x7324a1b1, 0x776b4607, 0x046d6e89, 0x00000000, 0x7fbbe37c, 0x2c3a93b8,
-    0xd3364177, 0x00000030, 0x883b5ee2, 0x810655d4, 0xe8425b84, 0x00000038,
-    0x919d1e35, 0x3d21172b, 0x34877a22, 0x0000000d, 0x94657521, 0x289b8402,
-    0xf441eb22, 0x00000045, 0xaa328fb2, 0x4ab02050, 0x8546cf0e, 0x0000004e,
-    0xb1a7f7b7, 0xcc4aabe2, 0x11c7be56, 0x00000000, 0xb5dcd720, 0xed7238e4,
-    0xbf152f7b, 0x00000030, 0xd0cffc40, 0xc1070187, 0xb6e6c296, 0x0000000d,
-    0xf44e9e31, 0xa120aaf4, 0xdd1f037d, 0x00000058, 0xf482db1c, 0x736d35de,
-    0x091d442c, 0x00000000, 0xfb552a13, 0xf8a3ef84, 0xdbe4d883, 0x0000000d,
+    0x103244d9, 0x400ed505, 0xec2ae6dd, 0x00000000, 0x2b04e37b, 0x7bc6dd4d,
+    0xb83c1002, 0x00000008, 0x38c9f8f0, 0xd5a09d18, 0x88967ed6, 0x00000012,
+    0x454ff296, 0x91b70c43, 0x5087f89e, 0x0000001f, 0x45963c3f, 0xe8508adb,
+    0xbd0e91ae, 0x0000001f, 0x468e85df, 0x35205860, 0xb3e3bd97, 0x0000001f,
+    0x5a2077fb, 0xdfad0f64, 0x5832e3dd, 0x00000012, 0x616d9f41, 0xe4999e8f,
+    0xe92de765, 0x00000012, 0x656f9ae8, 0x6312af09, 0x89afe8c5, 0x0000002a,
+    0x7560c5d6, 0xcd5eea83, 0x5d6c2fc5, 0x00000012, 0x7a1278e5, 0x529a7655,
+    0xfd8668b3, 0x00000000, 0xb6cd57ec, 0xa920960e, 0xd6585abd, 0x00000037,
+    0xc3c2a596, 0xa717e46b, 0xe78b9dc5, 0x0000001f, 0xcc23f8b9, 0x564c3f06,
+    0x2c03cce6, 0x00000040, 0xcd3749a7, 0x6545c151, 0xe9dcc557, 0x0000004f,
+    0xe5e745b3, 0x13ce7f16, 0x1a4d89eb, 0x0000001f, 0xedab70b3, 0xa76cb477,
+    0xe705d9f1, 0x0000005d, 0xf3bf2815, 0xf1dbc707, 0xcf3c3a0c, 0x00000012,
 };
 
 #ifdef __cplusplus

@@ -1,4 +1,4 @@
-import { concat, keccak256, toBeArray } from "./lib/ethers.js";
+import { concat, keccak256, toBeArray, zeroPadValue } from "./lib/ethers.js";
 
 import { readJSON, writeDoth } from "./lib/utils.mjs";
 
@@ -29,7 +29,7 @@ for (const { name, address } of data) {
     for (const entry of address) {
       const comps = entry.split(":");
       if (comps.length !== 2) { throw new Error(`bad entry: ${ entry }`); }
-      const chainId = toBeArray(getNetwork(comps[0]), 32);
+      const chainId = zeroPadValue(toBeArray(getNetwork(comps[0])), 32);
       const addr = comps[1];
       const key = keccak256(concat([ addr, chainId ])).substring(2, 26);
       records.push({ key, values: [ name ] });
