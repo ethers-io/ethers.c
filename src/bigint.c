@@ -507,17 +507,29 @@ size_t ffx_bigint_getString(const FfxBigInt *a, char *out) {
 void ffx_bigint_getBytes(const FfxBigInt *a, uint8_t *out) {
     uint32_t *value = a->value;
 
+    // Bootstrap the accumulator
     uint64_t accum = *value++;
     accum <<= 36;
     size_t bits = 28;
 
+    // Accumulate another 28 bits
+    accum |= ((uint64_t)(*value++)) << ((uint64_t)(36 - bits));
+    bits += 28;
+
+    // We want the bottom 256-bits value (of the total 280-bits)
+    accum <<= 24;
+    bits -= 24;
+
     for (int i = 0; i < 32; i++) {
+        // Not enough bits to read another byte...
         if (bits < 8) {
-            accum |= (*value++) << (36 - bits);
+            // ...accumulate another 28 bits
+            accum |= ((uint64_t)(*value++)) << ((uint64_t)(36 - bits));
             bits += 28;
         }
 
-        *out = accum >> 56;
+        // Consume 8 bits
+        *out++ = accum >> 56;
         accum <<= 8;
         bits -= 8;
     }
