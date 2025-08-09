@@ -505,7 +505,7 @@ size_t ffx_bigint_getString(const FfxBigInt *a, char *out) {
 }
 
 void ffx_bigint_getBytes(const FfxBigInt *a, uint8_t *out) {
-    uint32_t *value = a->value;
+    const uint32_t *value = a->value;
 
     // Bootstrap the accumulator
     uint64_t accum = *value++;
