@@ -186,11 +186,11 @@ int runTestTxs(const char* name, const uint8_t *privkey, FfxCborCursor tx,
   const uint8_t *rlpSigned, size_t rlpSignedLength) {
 
     uint8_t bytes[1024];
-    FfxDataResult result = ffx_tx_serializeUnsigned(tx, bytes, sizeof(bytes));
+    FfxDataResult result = ffx_tx_serializeUnsigned(&tx, bytes, sizeof(bytes));
 
     if (result.error) {
         printf("Failed to serialize unsigned tx: status=%d\n", result.error);
-        ffx_cbor_dump(tx);
+        ffx_cbor_dump(&tx);
         return 1;
     }
 
@@ -202,7 +202,7 @@ int runTestTxs(const char* name, const uint8_t *privkey, FfxCborCursor tx,
     if (result.length != rlpUnsignedLength ||
       cmpbuf(result.bytes, rlpUnsigned, rlpUnsignedLength)) {
         printf("Unsigned TX RLP did not match\n");
-        ffx_cbor_dump(tx);
+        ffx_cbor_dump(&tx);
         dumpBuffer("Actual:   ", result.bytes, result.length);
         dumpBuffer("Expected: ", rlpUnsigned, rlpUnsignedLength);
         return 1;
@@ -220,11 +220,11 @@ int runTestTxs(const char* name, const uint8_t *privkey, FfxCborCursor tx,
 #define READ_STRING(NAME,MAXSIZE) \
     char (NAME)[MAXSIZE] = { 0 }; \
     { \
-        FfxCborCursor child = ffx_cbor_followKey(cursor, #NAME); \
+        FfxCborCursor child = ffx_cbor_followKey(&cursor, #NAME); \
         if (child.error) { \
             printf("BAD FOLLOW STRING: " #NAME "\n"); break; \
         } \
-        FfxDataResult data = ffx_cbor_getData(child); \
+        FfxDataResult data = ffx_cbor_getData(&child); \
         if (data.error) { printf("BAD COPY: " #NAME "\n"); break; } \
         memcpy((NAME), data.bytes, MIN((MAXSIZE) - 1, data.length)); \
     }
@@ -233,22 +233,22 @@ int runTestTxs(const char* name, const uint8_t *privkey, FfxCborCursor tx,
 #define READ_DATA(NAME) \
     FfxDataResult NAME = { 0 }; \
     { \
-        FfxCborCursor child = ffx_cbor_followKey(cursor, #NAME); \
+        FfxCborCursor child = ffx_cbor_followKey(&cursor, #NAME); \
         if (child.error) { \
             printf("BAD FOLLOW DATA: key=" #NAME "\n"); break; \
         } \
-        (NAME) = ffx_cbor_getData(child); \
+        (NAME) = ffx_cbor_getData(&child); \
         if ((NAME).error) { printf("BAD GET DATA: " #NAME "\n"); break; } \
     }
 
 #define READ_VALUE(NAME) \
     uint64_t NAME = 0;  \
     { \
-        FfxCborCursor child = ffx_cbor_followKey(cursor, #NAME); \
+        FfxCborCursor child = ffx_cbor_followKey(&cursor, #NAME); \
         if (child.error) { \
             printf("BAD FOLLOW VALUE: " #NAME "\n"); break; \
         } \
-        FfxValueResult result = ffx_cbor_getValue(child); \
+        FfxValueResult result = ffx_cbor_getValue(&child); \
         if (result.error) { printf("BAD GET VALUE: " #NAME "\n"); break; } \
         NAME = result.value; \
     }
@@ -256,7 +256,7 @@ int runTestTxs(const char* name, const uint8_t *privkey, FfxCborCursor tx,
 
 #define OPEN_ARRAY() \
     { \
-        FfxCborIterator iter = ffx_cbor_iterate(cursor); \
+        FfxCborIterator iter = ffx_cbor_iterate(&cursor); \
         while (ffx_cbor_nextChild(&iter)) { \
             FfxCborCursor cursor = iter.child;
 
@@ -267,9 +267,9 @@ int runTestTxs(const char* name, const uint8_t *privkey, FfxCborCursor tx,
 
 #define OPEN_AND_READ_ARRAY(NAME) \
     { \
-        FfxCborCursor follow = ffx_cbor_followKey(cursor, #NAME); \
+        FfxCborCursor follow = ffx_cbor_followKey(&cursor, #NAME); \
         if (follow.error) { printf("BAD FOLLOW ARRAY\n"); break; } \
-        FfxCborIterator iter = ffx_cbor_iterate(follow); \
+        FfxCborIterator iter = ffx_cbor_iterate(&follow); \
         while (ffx_cbor_nextChild(&iter)) { \
             FfxCborCursor cursor = iter.child;
 
@@ -461,7 +461,7 @@ int test_mnemonics() {
                         }
 
                         OPEN_AND_READ_ARRAY(path)
-                            FfxValueResult result = ffx_cbor_getValue(cursor);
+                            FfxValueResult result = ffx_cbor_getValue(&cursor);
                             if (result.error) { break; }
                             ffx_hdnode_deriveChild(&node, result.value);
                         CLOSE_ARRAY()
@@ -534,7 +534,7 @@ int test_transactions() {
         READ_DATA(rlpUnsigned)
         READ_DATA(rlpSigned)
 
-        FfxCborCursor tx = ffx_cbor_followKey(cursor, "tx");
+        FfxCborCursor tx = ffx_cbor_followKey(&cursor, "tx");
         if (tx.error) { break; }
 
 //if (!strcmp(name, "random-22")) {
@@ -555,6 +555,13 @@ int test_transactions() {
     END_TESTS(transactions)
 }
 
+FfxHash256 ffx_firefly_hashAttest(FfxDataResult *data);
+int test_attest() {
+    const uint8_t _test[] = { 165, 103, 118, 101, 114, 115, 105, 111, 110, 1, 102, 100, 111, 109, 97, 105, 110, 162, 104, 99, 111, 110, 116, 114, 97, 99, 116, 84, 18, 52, 86, 120, 144, 18, 52, 86, 120, 144, 18, 52, 86, 120, 144, 18, 52, 86, 120, 144, 103, 99, 104, 97, 105, 110, 73, 100, 67, 170, 54, 167, 100, 115, 97, 108, 116, 88, 32, 18, 52, 86, 120, 144, 171, 205, 239, 18, 52, 86, 120, 144, 171, 205, 239, 18, 52, 86, 120, 144, 171, 205, 239, 18, 52, 86, 120, 144, 171, 205, 239, 102, 97, 99, 116, 105, 111, 110, 108, 67, 108, 97, 105, 109, 84, 101, 115, 116, 69, 84, 72, 102, 112, 97, 114, 97, 109, 115, 129, 163, 100, 110, 97, 109, 101, 105, 114, 101, 99, 105, 112, 105, 101, 110, 116, 100, 116, 121, 112, 101, 103, 97, 100, 100, 114, 101, 115, 115, 101, 118, 97, 108, 117, 101, 84, 18, 52, 86, 120, 144, 18, 52, 86, 120, 144, 18, 52, 86, 120, 144, 18, 52, 86, 120, 144 };
+    FfxDataResult test = { .bytes = _test, .length = sizeof(_test) };
+    ffx_firefly_hashAttest(&test);
+    return 0;
+}
 
 ///////////////////////////////
 // Test Bootstrap
@@ -573,6 +580,7 @@ int main() {
     countFail += test_mnemonics();
     countFail += test_pbkdf();
     countFail += test_transactions();
+    countFail += test_attest();
 
     printf("Total: %zu failed\n", countFail);
 
